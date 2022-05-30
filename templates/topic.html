@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <div class="container-lg">
+        <div class="row mt-3">
+            <div class="col">
+                <h4 class="nowrap">{{ topic.topic }}</h4>
+                <p class="nowrap">by {{ topic.user }}</p>
+            </div>
+            <div class="col text-end">
+                <a href="{{ url_for( 'editTopic' ) }}"><button class="btn btn-warning btn-sm"><i class="bi bi-pen-fill"></i></button></a>
+                <a href="{{ url_for( 'deleteTopic' ) }}"><button class="btn btn-danger btn-sm"><i class="bi bi-trash3-fill"></i></button></a>
+                <a href="{{ url_for( 'addPost' ) }}"><button class="btn btn-success btn-sm"><i class="bi bi-plus-circle-fill"></i></button></a>
+            </div>
+        </div>
+        <p class="lead mt-2">{{ topic.body }}</p>
+        <hr />
+
+        <!-- I learned how to recurse from https://ansaurus.com/question/1563276-how-does-the-jinja2-recursive-tag-actually-work -->
+        {% for post in topic.posts recursive %}
+            <div class="ms-5">
+                <div class="row">
+                    <div class="col">
+                        <p>
+                            <span><strong>{{ post.user }}</strong></span>
+                            <span class="text-muted">posted on {{ post.timestamp|strftime }}</span>
+                        </p>
+                    </div>
+                    <div class="col text-end">
+                        <a href="{{ url_for( 'editPost' ) }}"><button class="btn btn-warning btn-sm"><i class="bi bi-pen-fill"></i></button></a>
+                        <a href="{{ url_for( 'deletePost' ) }}"><button class="btn btn-danger btn-sm"><i class="bi bi-trash3-fill"></i></button></a>
+                        <a href="{{ url_for( 'replyPost' ) }}"><button class="btn btn-success btn-sm"><i class="bi bi-reply-fill"></i></button></a>
+                    </div>
+                </div>
+                <p>{{ post.body }}</p>
+                <hr/>
+                {% if post.posts is defined %}
+                    {{ loop( post.posts ) }}
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% endblock content %}

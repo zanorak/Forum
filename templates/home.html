@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <div class="container-lg">
+        <div class="row">
+            <div class="col">
+                <h1>Topics</h1>
+            </div>
+            <div class="col text-end mt-3">
+                <a href="{{ url_for( 'addTopic' ) }}"><button class="btn btn-success btn-sm"><i class="bi bi-plus-circle-fill"></i></button></a>
+            </div>
+        </div>
+        <hr/>
+        {% for topic in collection %}
+            <div>
+                <a class="link-dark text-decoration-none" href="{{ url_for( 'displayTopic', id = topic._id ) }}">
+                    <h4 class="nowrap">{{ topic.topic }}</h4>
+                </a>
+                <p class="nowrap text-muted">by {{ topic.user }}</p>
+            </div>
+            <p class="lead mt-2">{{ topic.body }}</p>
+            <hr />
+        {% endfor %}
+    </div>
+{% endblock content %}

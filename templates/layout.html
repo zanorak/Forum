@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <!-- I switched to Bootstrap 5 because that was the tutorial I watched -->
+        <link rel="stylesheet" href="{{ url_for( 'static', filename='bootstrap.min.css') }}" />
+        <link rel="stylesheet" href="{{ url_for( 'static', filename='style.css') }}" />
+        <link rel="stylesheet" href="{{ url_for( 'static', filename='fonts/bootstrap-icons.css') }}" />
+        <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
+        <title>Board Game Forum</title>
+    </head>
+    <body>
+        {% include 'navbar.html' %}
+        <div class="container-lg">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        {% if category == "message" %}
+                            {% set cls = "alert alert-success alert-dismissible fade show" %}
+                        {% elif category == "error" %}
+                            {% set cls = "alert alert-danger alert-dismissible fade show" %}
+                        {% endif %}
+                        <div class="{{ cls }}">
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+        {% block content %}
+        {% endblock content %}
+    </body>
+</html>

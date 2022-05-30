@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="container-lg">
+        <h1>{{ title }}</h1>
+        <form method="POST" action="{{ url_for( 'addTopic' ) }}">
+            <div class="mb-3">
+                <label for="title" class="form-label">Title</label>
+                <input type="text" class="form-control" name="title" />
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" name="description" rows="3"></textarea>
+            </div>
+            {% if action == 'add' %}
+                <button type="submit" class="btn btn-warning" name="Submit" value="Cancel">Cancel</button>
+                <button type="submit" class="btn btn-primary" name="Submit" value="Save">Save</button>
+            {% elif action == 'edit' %}
+                <button type="submit" class="btn btn-warning" name="Submit" value="Cancel">Cancel</button>
+                <button type="submit" class="btn btn-primary" name="Submit" value="Save">Save</button>
+            {% elif action == 'edit' %}
+                <button type="submit" class="btn btn-warning" name="Submit" value="Cancel">Cancel</button>
+                <button type="submit" class="btn btn-danger" name="Submit" value="Delete">Delete</button>
+            {% endif %}
+        </form>
+    </div>
+{% endblock content %}
