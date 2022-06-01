@@ -9,3 +9,5 @@ Flask-OAuthlib
 pymongo
 python-dateutil
 better_profanity
+python-dateutil
+dnspython
