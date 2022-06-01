@@ -8,7 +8,10 @@ from bson.objectid import ObjectId
 import pprint
 import os
 from dateutil.parser import *
+import datetime
+from better_profanity import profanity
 
+ 
 # This code originally from https://github.com/lepture/flask-oauthlib/blob/master/example/github.py
 # Edited by P. Conrad for SPIS 2016 to add getting Client Id and Secret from
 # environment variables, so that this will work on Heroku.
@@ -102,6 +105,18 @@ def displayTopic():
 @app.route( '/addtopic', methods = [ 'POST', 'GET' ] )
 def addTopic():
     if request.method == 'POST':
+        submit = request.form.get( 'Submit' )
+        if submit == 'Save':
+            topic = {
+                'user': session['user_data']['login'],
+                'topic': request.form.get( 'topic' ),
+                'body': profanity.censor( request.form.get( 'body' ), '*' ),
+                'posts': [],
+                'numPosts': 0
+            }
+            result = collection.insert_one( topic )
+            return redirect( url_for('displayTopic', id = result.inserted_id ) )
+
         return redirect( url_for('home') )
 
     action = 'add'
@@ -111,40 +126,215 @@ def addTopic():
 
 @app.route( '/edittopic', methods = [ 'POST', 'GET' ] )
 def editTopic():
-    action = 'edit'
-    title = 'Edit Topic'
-    return render_template( 'topic_form.html', action = action, title = title )
+    if request.method == 'POST':
+        submit = request.form.get( 'Submit' )
+        id = request.form.get( 'id' )
+        if submit == 'Save':
+            collection.find_one_and_update( 
+                { '_id': ObjectId( id ) },
+                { '$set': { 
+                    'topic': request.form.get( 'topic' ),
+                    'body': profanity.censor( request.form.get( 'body' ), '*' ),
+                     }
+                }
+            )
+        return redirect( url_for('displayTopic', id = id ) )
+
+    else:
+        id = request.args.get( 'id' )
+        topic = collection.find_one( { '_id': ObjectId( id ) } )
+        formdata = {
+            'id': topic['_id'],
+            'topic': topic['topic'],
+            'body': topic['body'],
+        }
+        action = 'edit'
+        title = 'Edit Topic'
+        return render_template( 'topic_form.html', action = action, title = title, formdata = formdata )
 
 
 @app.route( '/deletetopic', methods = [ 'POST', 'GET' ] )
 def deleteTopic():
-    action = 'delete'
-    title = 'Delete Topic'
-    return render_template( 'topic_form.html', action = action, title = title )
+    if request.method == 'POST':
+        submit = request.form.get( 'Submit' )
+        id = request.form.get( 'id' )
+        if submit == 'Delete':
+            collection.find_one_and_delete( 
+                { '_id': ObjectId( id ) },
+            )
+            return redirect( url_for('home' ) )
+        elif submit == 'Cancel':
+            return redirect( url_for('displayTopic', id = id ) )
+
+    else:
+        id = request.args.get( 'id' )
+        topic = collection.find_one( { '_id': ObjectId( id ) } )
+        formdata = {
+            'id': topic['_id'],
+            'topic': topic['topic'],
+            'body': topic['body'],
+        }
+        action = 'delete'
+        title = 'Delete Topic'
+        return render_template( 'topic_form.html', action = action, title = title, formdata = formdata )
+
+# This recursion stuff is hard. This took way too long to figure out.
+def findPost( posts, postId ):
+    for post in posts:
+        if post['postId'] == postId:
+            return post
+
+        post = findPost( post['posts'], postId )
+        if post is not None:
+            return post
+
+    return None
+
+def deletePostRecursive( posts, postId ):
+    # make a new list of posts that exclude the deleted post
+    newposts = []
+    for post in posts:
+        if post['postId'] != postId:
+            pprint.pprint( post )
+            newposts.append( post )
+
+            subposts = deletePostRecursive( post['posts'], postId )
+            pprint.pprint( subposts )
+            newposts[-1]['posts'] = subposts
+
+    return newposts
 
 
-@app.route( '/addpost' )
+@app.route( '/addpost', methods = [ 'POST', 'GET' ]  )
 def addPost():
-    action = 'add'
-    return render_template( 'post_form.html', action = action )
+    if request.method == 'POST':
+        id = request.form.get( 'id' )
+        topic = collection.find_one( { '_id': ObjectId( id ) } )
+        post = {
+            "postId": topic['numPosts'],
+            "user": session['user_data']['login'],
+            "body": profanity.censor( request.form.get( 'body' ), '*' ),
+            "timestamp": datetime.datetime.now().isoformat(),
+            "posts": []
+        }
+        topic['numPosts'] += 1
+        topic['posts'].append( post )
+        collection.update_one(
+            { '_id': ObjectId( id ) },
+            { '$set': topic }
+        )
+        return redirect( url_for('displayTopic', id = id ) )
+
+    else:
+        id = request.args.get( 'id' )
+        topic = collection.find_one( { '_id': ObjectId( id ) } )
+        action = 'add'
+        formdata = {
+            'id': topic['_id']
+        }
+        return render_template( 'post_form.html', action = action, topic = topic, formdata = formdata )
 
 
-@app.route( '/replypost' )
+@app.route( '/replypost', methods = [ 'POST', 'GET' ]  )
 def replyPost():
-    action = 'reply'
-    return render_template( 'post_form.html', action = action )
+    if request.method == 'POST':
+        id = request.form.get( 'id' )
+        postId = int(request.form.get( 'postid' ))
+        topic = collection.find_one( { '_id': ObjectId( id ) } )
+        post = findPost( topic['posts'], postId )
+
+        reply = {
+            "postId": topic['numPosts'],
+            "user": session['user_data']['login'],
+            "body": profanity.censor( request.form.get( 'body' ), '*' ),
+            "timestamp": datetime.datetime.now().isoformat(),
+            "posts": []
+        }
+        topic['numPosts'] += 1
+        post['posts'].append( reply )
+        collection.update_one(
+            { '_id': ObjectId( id ) },
+            { '$set': topic }
+        )
+        return redirect( url_for('displayTopic', id = id ) )
+
+    else:
+        id = request.args.get( 'id' )
+        postId = int(request.args.get( 'postid' ))
+        topic = collection.find_one( { '_id': ObjectId( id ) } )
+        action = 'reply'
+        post = findPost( topic['posts'], postId )
+        formdata = {
+            'id': id,
+            'postId': post['postId']
+        }
+        return render_template( 'post_form.html', action = action, topic = topic, formdata = formdata, post = post )
 
 
-@app.route( '/editpost' )
+@app.route( '/editpost', methods = [ 'POST', 'GET' ]  )
 def editPost():
-    action = 'edit'
-    return render_template( 'post_form.html', action = action )
+    if request.method == 'POST':
+        submit = request.form.get( 'Submit' )
+        id = request.form.get( 'id' )
+        if submit == 'Save':
+            postId = int(request.form.get( 'postid' ))
+            body = profanity.censor( request.form.get( 'body' ), '*' )
+            topic = collection.find_one( { '_id': ObjectId( id ) } )
+            post = findPost( topic['posts'], postId )
+            post['body'] = body
+            collection.update_one(
+                { '_id': ObjectId( id ) },
+                { '$set': topic }
+             )
+
+        return redirect( url_for('displayTopic', id = id ) )
+    
+    else:
+        id = request.args.get( 'id' )
+        postId = int(request.args.get( 'postid' ))
+        topic = collection.find_one( { '_id': ObjectId( id ) } )
+        # recurse through the posts to find the postId
+        post = findPost( topic['posts'], postId )
+        formdata = {
+            'id': topic['_id'],
+            'postId': post['postId'],
+            'body': post['body'],
+        }
+        action = 'edit'
+        return render_template( 'post_form.html', action = action, formdata = formdata )
 
 
-@app.route( '/deletepost' )
+@app.route( '/deletepost', methods = [ 'POST', 'GET' ]  )
 def deletePost():
-    action = 'delete'
-    return render_template( 'post_form.html', action = action )
+    if request.method == 'POST':
+        submit = request.form.get( 'Submit' )
+        id = request.form.get( 'id' )
+        if submit == 'Delete':
+            postId = int(request.form.get( 'postid' ))
+            topic = collection.find_one( { '_id': ObjectId( id ) } )
+            # this one was even harder
+            newposts = deletePostRecursive( topic['posts'], postId )
+            topic['posts'] = newposts
+            collection.update_one(
+                { '_id': ObjectId( id ) },
+                { '$set': topic }
+             )
+
+        return redirect( url_for('displayTopic', id = id ) )
+
+    else:
+        id = request.args.get( 'id' )
+        postId = int(request.args.get( 'postid' ))
+        topic = collection.find_one( { '_id': ObjectId( id ) } )
+        # recurse through the posts to find the postId
+        post = findPost( topic['posts'], postId )
+        formdata = {
+            'id': topic['_id'],
+            'postId': post['postId'],
+            'body': post['body'],
+        }
+        action = 'delete'
+        return render_template( 'post_form.html', action = action, formdata = formdata )
 
 
 #the tokengetter is automatically called to check who is logged in.

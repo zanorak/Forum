@@ -2,14 +2,23 @@
 {% block content %}
     <div class="container-lg">
         <h1>{{ title }}</h1>
-        <form method="POST" action="{{ url_for( 'addTopic' ) }}">
+        {% if action == 'add' %}
+            <form method="POST" action="{{ url_for( 'addTopic' ) }}">
+        {% elif action == 'edit' %}
+            <form method="POST" action="{{ url_for( 'editTopic' ) }}">
+        {% elif action == 'delete' %}
+            <form method="POST" action="{{ url_for( 'deleteTopic' ) }}">
+        {% endif %}
+            {% if formdata %}
+                <input type="text" hidden name="id" value="{{ formdata.id }}" />
+            {% endif %}
             <div class="mb-3">
-                <label for="title" class="form-label">Title</label>
-                <input type="text" class="form-control" name="title" />
+                <label for="topic" class="form-label">Title</label>
+                <input type="text" class="form-control" name="topic" {% if formdata %}value="{{formdata.topic}}"{% endif %} />
             </div>
             <div class="mb-3">
-                <label for="description" class="form-label">Description</label>
-                <textarea class="form-control" name="description" rows="3"></textarea>
+                <label for="body" class="form-label">Description</label>
+                <textarea class="form-control" name="body" rows="4">{% if formdata %}{{ formdata.body }}{% endif %}</textarea>
             </div>
             {% if action == 'add' %}
                 <button type="submit" class="btn btn-warning" name="Submit" value="Cancel">Cancel</button>
@@ -17,7 +26,7 @@
             {% elif action == 'edit' %}
                 <button type="submit" class="btn btn-warning" name="Submit" value="Cancel">Cancel</button>
                 <button type="submit" class="btn btn-primary" name="Submit" value="Save">Save</button>
-            {% elif action == 'edit' %}
+            {% elif action == 'delete' %}
                 <button type="submit" class="btn btn-warning" name="Submit" value="Cancel">Cancel</button>
                 <button type="submit" class="btn btn-danger" name="Submit" value="Delete">Delete</button>
             {% endif %}

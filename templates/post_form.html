@@ -1,7 +1,62 @@
 {% extends "layout.html" %}
-
 {% block content %}
     <div class="container-lg">
-        <h1>Post Form</h1>
+        <h1>{{ title }}</h1>
+        {% if topic is defined %}
+            <div class="row mt-3">
+                <div class="col">
+                    <h4 class="nowrap">{{ topic.topic }}</h4>
+                    <p class="nowrap">by {{ topic.user }}</p>
+                </div>
+            </div>
+            <p class="lead mt-2 pre-wrap">{{ topic.body }}</p>
+            <hr />
+        {% endif %}
+
+        {% if post is defined %}
+            <div class="row">
+                <div class="col">
+                    <p>
+                        <span><strong>{{ post.user }}</strong></span>
+                        <span class="text-muted">posted on {{ post.timestamp|strftime }}</span>
+                    </p>
+                </div>
+            </div>
+            <p class="pre-wrap">{{ post.body }}</p>
+            <hr/>
+        {% endif %}
+        
+        {% if action == 'add' %}
+            <form method="POST" action="{{ url_for( 'addPost', id = formdata.id ) }}">
+        {% elif action == 'reply' %}
+            <form method="POST" action="{{ url_for( 'replyPost', id = formdata.id, postId = formdata.postid ) }}">
+        {% elif action == 'edit' %}
+            <form method="POST" action="{{ url_for( 'editPost', id = formdata.id, postId = formdata.postid ) }}">
+        {% elif action == 'delete' %}
+            <form method="POST" action="{{ url_for( 'deletePost', id = formdata.id, postId = formdata.postid ) }}">
+        {% endif %}
+            {% if formdata is defined %}
+                <input type="text" hidden name="id" value="{{ formdata.id }}" />
+                <input type="text" hidden name="postid" value="{{ formdata.postId }}" />
+            {% endif %}
+            <div class="mb-3">
+                {% if action == 'reply' %}
+                    <label for="body" class="form-label">Your Reply</label>
+                {% else %}
+                    <label for="body" class="form-label">Your Post</label>
+                {% endif %}
+                <textarea class="form-control" name="body" rows="4">{% if formdata is defined %}{{ formdata.body }}{% endif %}</textarea>
+            </div>
+            {% if action == 'add' or action == 'reply' %}
+                <button type="submit" class="btn btn-warning" name="Submit" value="Cancel">Cancel</button>
+                <button type="submit" class="btn btn-primary" name="Submit" value="Save">Save</button>
+            {% elif action == 'edit' %}
+                <button type="submit" class="btn btn-warning" name="Submit" value="Cancel">Cancel</button>
+                <button type="submit" class="btn btn-primary" name="Submit" value="Save">Save</button>
+            {% elif action == 'delete' %}
+                <button type="submit" class="btn btn-warning" name="Submit" value="Cancel">Cancel</button>
+                <button type="submit" class="btn btn-danger" name="Submit" value="Delete">Delete</button>
+            {% endif %}
+        </form>
     </div>
 {% endblock content %}

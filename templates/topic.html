@@ -7,13 +7,17 @@
                 <h4 class="nowrap">{{ topic.topic }}</h4>
                 <p class="nowrap">by {{ topic.user }}</p>
             </div>
+            {% if logged_in == True %}
             <div class="col text-end">
-                <a href="{{ url_for( 'editTopic' ) }}"><button class="btn btn-warning btn-sm"><i class="bi bi-pen-fill"></i></button></a>
-                <a href="{{ url_for( 'deleteTopic' ) }}"><button class="btn btn-danger btn-sm"><i class="bi bi-trash3-fill"></i></button></a>
-                <a href="{{ url_for( 'addPost' ) }}"><button class="btn btn-success btn-sm"><i class="bi bi-plus-circle-fill"></i></button></a>
+                {% if topic.user == session['user_data']['login'] %}
+                <a href="{{ url_for( 'editTopic', id = topic._id ) }}"><button class="btn btn-warning btn-sm"><i class="bi bi-pen-fill"></i></button></a>
+                <a href="{{ url_for( 'deleteTopic', id = topic._id ) }}"><button class="btn btn-danger btn-sm"><i class="bi bi-trash3-fill"></i></button></a>
+                {% endif %}
+                <a href="{{ url_for( 'addPost', id = topic._id ) }}"><button class="btn btn-success btn-sm"><i class="bi bi-plus-circle-fill"></i></button></a>
             </div>
+            {% endif %}
         </div>
-        <p class="lead mt-2">{{ topic.body }}</p>
+        <p class="lead mt-2 pre-wrap">{{ topic.body }}</p>
         <hr />
 
         <!-- I learned how to recurse from https://ansaurus.com/question/1563276-how-does-the-jinja2-recursive-tag-actually-work -->
@@ -26,13 +30,17 @@
                             <span class="text-muted">posted on {{ post.timestamp|strftime }}</span>
                         </p>
                     </div>
+                    {% if logged_in == True %}
                     <div class="col text-end">
-                        <a href="{{ url_for( 'editPost' ) }}"><button class="btn btn-warning btn-sm"><i class="bi bi-pen-fill"></i></button></a>
-                        <a href="{{ url_for( 'deletePost' ) }}"><button class="btn btn-danger btn-sm"><i class="bi bi-trash3-fill"></i></button></a>
-                        <a href="{{ url_for( 'replyPost' ) }}"><button class="btn btn-success btn-sm"><i class="bi bi-reply-fill"></i></button></a>
+                        {% if post.user == session['user_data']['login'] %}
+                        <a href="{{ url_for( 'editPost', id = topic._id, postid = post.postId ) }}"><button class="btn btn-warning btn-sm"><i class="bi bi-pen-fill"></i></button></a>
+                        <a href="{{ url_for( 'deletePost', id = topic._id, postid = post.postId ) }}"><button class="btn btn-danger btn-sm"><i class="bi bi-trash3-fill"></i></button></a>
+                        {% endif %}
+                        <a href="{{ url_for( 'replyPost', id = topic._id, postid = post.postId ) }}"><button class="btn btn-success btn-sm"><i class="bi bi-reply-fill"></i></button></a>
                     </div>
+                    {% endif %}
                 </div>
-                <p>{{ post.body }}</p>
+                <p class="pre-wrap">{{ post.body }}</p>
                 <hr/>
                 {% if post.posts is defined %}
                     {{ loop( post.posts ) }}
@@ -40,4 +48,5 @@
             </div>
         {% endfor %}
     </div>
+
 {% endblock content %}

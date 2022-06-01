@@ -7,3 +7,5 @@ wheel
 gunicorn
 Flask-OAuthlib
 pymongo
+python-dateutil
+better_profanity
